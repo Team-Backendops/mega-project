@@ -1,13 +1,10 @@
-import os
-from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from starlette.middleware.sessions import SessionMiddleware
+from pydantic_settings import BaseSettings
 
-load_dotenv()
+class Settings(BaseSettings):
+    mongo_url: str = "mongodb://localhost:27017"
+    database_name: str = "service_listing_db"
 
-def create_app() -> FastAPI:
-    app = FastAPI()
-    app.mount("/static", StaticFiles(directory="../frontend/static"), name="static")
-    app.add_middleware(SessionMiddleware, secret_key=os.getenv('SECRET_KEY', 'secretKey'), max_age=1800)  # 30 minutes
-    return app
+    class Config:
+        env_file = ".env"
+
+settings = Settings()

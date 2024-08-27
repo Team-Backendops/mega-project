@@ -4,15 +4,6 @@ from fastapi.templating import Jinja2Templates
 from crud.user import get_user_by_username, create_user, verify_password
 
 router = APIRouter()
-templates = Jinja2Templates(directory="frontend/templates")
-
-@router.get("/login")
-async def login(request: Request, message: str = None):
-    try:
-        message = request.query_params.get("message", "")
-        return templates.TemplateResponse("login.html", {"request": request, "message": message})
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.post("/login")
 async def post_login(request: Request):
@@ -33,30 +24,11 @@ async def post_login(request: Request):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.get("/protected")
-async def protected(request: Request, message: str = None):
-    try:
-        if 'user' not in request.session:
-            message = request.query_params.get("message", "")
-            return RedirectResponse(url="/login?message=Session expired. Please log in again.", status_code=status.HTTP_302_FOUND)
-
-        return templates.TemplateResponse("protected.html", {"request": request, "user": request.session['user'], "message": message})
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
 @router.get("/logout")
 async def logout(request: Request):
     try:
         request.session.clear()
         return RedirectResponse(url="/login?message=You have been logged out.", status_code=status.HTTP_302_FOUND)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-@router.get("/register")
-async def register(request: Request, message: str = None):
-    try:
-        message = request.query_params.get("message", "")
-        return templates.TemplateResponse("register.html", {"request": request, "message": message})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
