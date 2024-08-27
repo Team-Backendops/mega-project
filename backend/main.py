@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from routers import service
-from core.database import init_db
 
 app = FastAPI()
 
