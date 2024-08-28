@@ -58,12 +58,11 @@
 #         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 @app.get("/service-providers/{service_provider_id}", response_model=ServiceProvider)
-async def get_service_provider(service_provider_id: int):
-    for provider in service_providers:
-        if provider["id"] == service_provider_id:
-            return provider
-    raise HTTPException(status_code=404, detail="Service provider not found")
-
+async def get_service_provider(service_provider_id: str):
+    provider = ServiceProvider.find_one({"_id": ObjectId(service_provider_id)})
+    if not provider:
+        raise HTTPException(status_code=404, detail="Service provider not found")
+    return provider
 
 @app.delete("/service-providers/{service_provider_id}")
 async def delete_service_provider(service_provider_id: str):
