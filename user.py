@@ -3,7 +3,7 @@ from fastapi import BackgroundTasks
 from fastapi.middleware.sessions import SessionMiddleware
 from passlib.context import CryptContext
 from core.config import settings
-from models.user import UserModel, RegisterModel  
+from models.user import UserModel, RegisterModel ,RatingModel 
 from core.database import MongoDBClient  # Import MongoDBClient class
 
 router = APIRouter()
@@ -13,6 +13,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Access collections from MongoDBClient
 users_collection = MongoDBClient.get_db()['users']
+ratings_collection = MongoDBClient.get_db()['ratings']
+
 
 SECRET_KEY = secrets.token_hex(16)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=1800)  # 1800 seconds = 30 minutes
