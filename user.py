@@ -67,3 +67,19 @@ async def post_register(user: RegisterModel):
         return {"message": "Registration successful. Please log in."}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.post("/rating")
+async def store_rating(rating: RatingModel):
+    try:
+        await ratings_collection.insert_one(rating.dict())
+        return {"message": "Rating stored successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/ratings")
+async def get_ratings():
+    try:
+        ratings = await ratings_collection.find().to_list()
+        return ratings
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
