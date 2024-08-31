@@ -27,7 +27,7 @@ background_tasks.add_task(expire_sessions, interval=600)
 @router.post("/login")
 async def post_login(user: UserModel, request: Request):
     try:
-        user_in_db = await users_collection.find_one({"username": user.username})
+        user_in_db = await users_collection.findOne({"username": user.username})
         if not user_in_db:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
 
@@ -54,12 +54,12 @@ async def post_register(user: RegisterModel):
         if user.password != user.confirm_password:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match")
 
-        user_in_db = await users_collection.find_one({"username": user.username})
+        user_in_db = await users_collection.findOne({"username": user.username})
         if user_in_db:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
 
         hashed_password = pwd_context.hash(user.password)
-        await users_collection.insert_one({
+        await users_collection.insertOne({
             "username": user.username,
             "hashed_password": hashed_password
         }) 
