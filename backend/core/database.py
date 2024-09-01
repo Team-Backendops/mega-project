@@ -25,5 +25,6 @@ class MongoDBClient:
         return cls._fs
 
 service_collection = MongoDBClient.get_db()['business']
+images_collection = MongoDBClient.get_db()['images']
 users = MongoDBClient.get_db()['users']
 fs = MongoDBClient.get_gridfs()
