@@ -61,6 +61,10 @@
 
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
+from models.service import ReviewModel
+
+reviews_collection = MongoDBClient.get_db()['ratings']
+
 
 # Get all service providers
 @app.get("/service-providers/", response_model=List[ServiceProvider])
