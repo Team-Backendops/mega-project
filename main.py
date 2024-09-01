@@ -115,3 +115,16 @@ async def get_reviews(provider_id: str):
         return reviews
     else:
         raise HTTPException(status_code=404, detail="No reviews found for this service provider")
+
+# Route to get the average rating for a specific service provider
+@app.get("/service-providers/{provider_id}/average-rating/")
+async def get_average_rating(provider_id: str):
+    pipeline = [
+        {"$match": {"provider_id": provider_id}},
+        {"$group": {"_id": "$provider_id", "average_rating": {"$avg": "$rating"}}}
+    ]
+    result = list(reviews_collection.aggregate(pipeline))
+    if result:
+        return {"provider_id": provider_id, "average_rating": round(result[0]["average_rating"], 2)}
+    else:
+        raise HTTPException(status_code=404, detail="No reviews found for this service provider")
