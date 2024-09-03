@@ -44,34 +44,3 @@ async def delete_service_provider(service_id: str):
 async def add_images(images: dict):
     result = await images_collection.insert_one(images)
     return result
-
-# testing is pending
-# async def get_image(file_id: str):
-#     try:
-#         grid_out = fs.open_download_stream(ObjectId(file_id))
-#         file_data = await grid_out.read()
-#         content_type = grid_out.metadata.get("contentType", "application/octet-stream")
-
-#         return file_data, content_type
-#     except Exception as e:
-#         print(f"Error retrieving image: {e}")
-#         return None, None
-
-# async def update_service_provider_images(service_id: str, update_data: dict):
-#     try:
-#         return await service_collection.update_one({"service_id": service_id}, {"$set": update_data})
-#     except Exception as e:
-#         print(f"Error updating images: {e}")
-#         return None
-
-# async def delete_images_by_service_id(service_id: str, image_fields: List[str] = None):
-#     try:
-#         if image_fields:
-#             update_data = {field: None for field in image_fields}
-#             return await service_collection.update_one({"service_id": service_id}, {"$unset": update_data})
-#         else:
-#             return await service_collection.delete_one({"service_id": service_id})
-#     except Exception as e:
-#         print(f"Error deleting images: {e}")
-#         return None
-
