@@ -4,7 +4,6 @@ from core.database import service_collection, fs, images_collection
 from fastapi import UploadFile, HTTPException, File
 import logging
 
-# issues while uploading the image
 async def save_image(image: UploadFile):
     if image:
         try:
