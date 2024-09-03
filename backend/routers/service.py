@@ -100,7 +100,6 @@ async def remove_service_provider(service_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#issues while uploading the image
 @router.post("/service-providers/{service_id}/upload-images")
 async def service_provider_images(
     service_id: str,
