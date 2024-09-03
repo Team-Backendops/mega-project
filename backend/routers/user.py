@@ -1,52 +1,52 @@
 from fastapi import APIRouter, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
-from crud.user import get_user_by_username, create_user, verify_password
+from passlib.context import CryptContext
+from models.user import UserModel, RegisterModel
+from core.database import users
 
 router = APIRouter()
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
 @router.post("/login")
-async def post_login(request: Request):
+async def post_login(user: UserModel, request: Request):
     try:
-        form = await request.form()
-        username = form.get("username")
-        password = form.get("password")
+        user_in_db = await users.find_one({"username": user.username})
+        if not user_in_db:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
 
-        user = get_user_by_username(username)
-        if not user:
-            return RedirectResponse(url="/login?message=User does not exist", status_code=status.HTTP_302_FOUND)
+        if not pwd_context.verify(user.password, user_in_db['hashed_password']):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid password")
 
-        if not verify_password(user['password'], password):
-            return RedirectResponse(url="/login?message=Invalid password", status_code=status.HTTP_302_FOUND)
-
-        request.session['user'] = username
-        return RedirectResponse(url="/protected?message=Login successful", status_code=status.HTTP_302_FOUND)
+        request.session["user_id"] = str(user_in_db["_id"])
+        return {"message": "Login successful", "user_id": str(user_in_db["_id"])}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.get("/logout")
 async def logout(request: Request):
     try:
-        request.session.clear()
-        return RedirectResponse(url="/login?message=You have been logged out.", status_code=status.HTTP_302_FOUND)
+        request.session.clear() 
+        return {"message": "You have been logged out."}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.post("/register")
-async def post_register(request: Request):
+async def post_register(user: RegisterModel):
     try:
-        form = await request.form()
-        username = form.get("username")
-        password = form.get("password")
-        confirm_password = form.get("confirm_password")
+        if user.password != user.confirm_password:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match")
 
-        if password != confirm_password:
-            return RedirectResponse(url="/register?message=Passwords do not match", status_code=status.HTTP_302_FOUND)
+        user_in_db = await users.find_one({"username": user.username})
+        if user_in_db:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
 
-        if not username or not password or not confirm_password:
-            return RedirectResponse(url="/register?message=Please fill in all fields", status_code=status.HTTP_302_FOUND)
+        hashed_password = pwd_context.hash(user.password)
+        await users.insert_one({
+            "username": user.username,
+            "hashed_password": hashed_password
+        }) 
 
-        create_user(username, password)
-        return RedirectResponse(url="/login?message=Registration successful. Please log in.", status_code=status.HTTP_302_FOUND)
+        return {"message": "Registration successful. Please log in."}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
