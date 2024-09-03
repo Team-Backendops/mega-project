@@ -1,7 +1,7 @@
 from bson import ObjectId
 from models.service import ServiceProvider
 from core.database import service_collection, fs, images_collection
-from fastapi import UploadFile, HTTPException
+from fastapi import UploadFile, HTTPException, File
 import logging
 
 # issues while uploading the image
@@ -12,7 +12,8 @@ async def save_image(image: UploadFile):
                 image.filename,
                 metadata={"contentType": image.content_type}
             )
-            await grid_in.write(image.file.read())
+            image_content = await image.read()
+            await grid_in.write(image_content)
             await grid_in.close()
 
             return str(grid_in._id)
@@ -41,7 +42,7 @@ async def delete_service_provider(service_id: str):
     result = await service_collection.delete_one({"_id": ObjectId(service_id)})
     return result
 
-async def service_provider_images(images: dict):
+async def add_images(images: dict):
     result = await images_collection.insert_one(images)
     return result
 
