@@ -1,28 +1,51 @@
 from fastapi import APIRouter, HTTPException, status
-from fastapi import BackgroundTasks
-from fastapi.middleware.sessions import SessionMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from core.config import settings
-from models.user import UserModel, RegisterModel
-from core.database import MongoDBClient  # Import MongoDBClient class
+from models.user import UserModel, RegisterModel, TokenModel, TokenData
+from core.database import MongoDBClient
+import jwt
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
-# Initialize password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# Access collections from MongoDBClient
 users_collection = MongoDBClient.get_db()['users']
+SECRET_KEY = settings.SECRET_KEY
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
-SECRET_KEY = secrets.token_hex(16)
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=1800)  # 1800 seconds = 30 minutes
+bearer_scheme = HTTPBearer(auto_error=True)
 
-async def expire_sessions():
-    # Expire sessions that have been inactive for more than 30 minutes
-    await SessionMiddleware.expire_sessions()
+def create_access_token(data: dict, expires_delta: timedelta):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + expires_delta
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
+    return encoded_jwt
 
-background_tasks = BackgroundTasks()
-background_tasks.add_task(expire_sessions, interval=600)
+async def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    # Check if the token is in the blacklist
+    if token.credentials in blacklist:
+        raise credentials_exception
+
+    try:
+        payload = jwt.decode(token.credentials, SECRET_KEY, algorithms=["HS256"])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = TokenData(username=username)
+    except PyJWTError:
+        raise credentials_exception
+
+    user = await users_collection.find_one({"username": token_data.username})
+    if user is None:
+        raise credentials_exception
+    return user
 
 @router.post("/login")
 async def post_login(user: UserModel, request: Request):
@@ -34,16 +57,20 @@ async def post_login(user: UserModel, request: Request):
         if not pwd_context.verify(user.password, user_in_db['hashed_password']):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid password")
 
-        request.session["user_id"] = str(user_in_db["_id"])
-        # If login is successful
-        return {"message": "Login successful", "user_id": str(user_in_db["_id"])}
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.username},
+            expires_delta=access_token_expires
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.get("/logout")
 async def logout(request: Request):
     try:
-        request.session.clear() 
+         # Add the token to the blacklist
+        blacklist.add(token.credentials)
         return {"message": "You have been logged out."}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
