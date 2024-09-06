@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from core.config import settings
@@ -6,6 +6,7 @@ from models.user import UserModel, RegisterModel, TokenModel, TokenData
 from core.database import MongoDBClient
 import jwt
 from datetime import datetime, timedelta
+from typing import List, Set
 
 router = APIRouter()
 
@@ -15,6 +16,7 @@ SECRET_KEY = settings.SECRET_KEY
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 bearer_scheme = HTTPBearer(auto_error=True)
+blacklist: Set[str] = set()
 
 def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
@@ -67,9 +69,8 @@ async def post_login(user: UserModel, request: Request):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.get("/logout")
-async def logout(request: Request):
+async def logout(token: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     try:
-         # Add the token to the blacklist
         blacklist.add(token.credentials)
         return {"message": "You have been logged out."}
     except Exception as e:
