@@ -1,18 +1,19 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from routers import service, user, reviews
+from routers import service, user, reviews, queue
 import os
 import secrets
 
 app = FastAPI()
 
 SECRET_KEY = secrets.token_hex(16)
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=1800)
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
 app.include_router(user.router)
 app.include_router(service.router)
 app.include_router(reviews.router)
+app.include_router(queue.router)
 
 frontend_directory = os.path.join(os.path.dirname(__file__), "..", "frontend")
 
