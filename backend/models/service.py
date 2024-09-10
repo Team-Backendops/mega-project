@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
-
+from abc import ABC, abstractmethod
 
 class Location(BaseModel):
     address: str
@@ -21,3 +21,7 @@ class ServiceProvider(BaseModel):
     operating_hours: Optional[str] = None
     website: Optional[str] = None
     ratings: Optional[float] = None
+    profile_image_id: Optional[str] = None
+    adhar_card_image_id: Optional[str] = None
+    pan_card_image_id: Optional[str] = None
+    office_images_ids: List[str] = None
