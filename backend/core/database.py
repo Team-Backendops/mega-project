@@ -26,6 +26,8 @@ class MongoDBClient:
 
 service_collection = MongoDBClient.get_db()['business']
 images_collection = MongoDBClient.get_db()['images']
-users = MongoDBClient.get_db()['users']
+users_collection = MongoDBClient.get_db()['users']
 user_reviews = MongoDBClient.get_db()['user_reviews']
 fs = MongoDBClient.get_gridfs()
+queue = MongoDBClient.get_db()['queue']
+availability_collection = MongoDBClient.get_db()['availability']
