@@ -1,6 +1,6 @@
 from bson import ObjectId
 from models.service import ServiceProvider
-from core.database import service_collection, fs, images_collection
+from core.database import service_collection, fs
 from fastapi import UploadFile, HTTPException, File
 import logging
 
@@ -41,6 +41,23 @@ async def delete_service_provider(service_id: str):
     result = await service_collection.delete_one({"_id": ObjectId(service_id)})
     return result
 
-async def add_images(images: dict):
-    result = await images_collection.insert_one(images)
+async def add_images(service_id: str, images: dict):
+    result = await service_collection.update_one(
+        {"_id": ObjectId(service_id)},
+        {"$set": images}
+        )
     return result
+
+async def get_image_ids(service_id: str):
+    try:
+        document = await service_collection.find_one({"_id": ObjectId(service_id)})
+        if not document:
+            return None
+        return {
+            "profile_image_id": document.get("profile_image_id"),
+            "adhaar_card_image_id": document.get("adhaar_card_image_id"),
+            "pan_card_image_id": document.get("pan_card_image_id"),
+            "office_images_ids": document.get("office_images_ids", [])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
