@@ -12,7 +12,7 @@ from core.database import service_collection
 router = APIRouter()
 
 @router.post("/service-provider/")
-async def add_service_provider(service: ServiceProvider):
+async def add_service_provider(service: ServiceProvider,current_user: UserModel = Depends(get_current_user)):
     try:
         service_provider = {
             "name": service.name,
