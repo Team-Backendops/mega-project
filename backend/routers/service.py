@@ -6,6 +6,7 @@ from gridfs import GridFSBucket
 from core.database import fs
 from io import BytesIO
 from models.service import ServiceProvider
+from models.user import UserModel
 from crud.service import create_service_provider, save_image, add_images, get_service_provider, update_service_provider, delete_service_provider, get_image_ids
 from core.database import service_collection
 
@@ -38,7 +39,7 @@ async def add_service_provider(service: ServiceProvider,current_user: UserModel 
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/service-providers/{service_id}")
-async def get_service_provider_details(service_id: str):
+async def get_service_provider_details(service_id: str,current_user: UserModel = Depends(get_current_user)):
     try:
         if not ObjectId.is_valid(service_id):
             raise HTTPException(status_code=400, detail="Invalid service provider ID")
@@ -52,7 +53,7 @@ async def get_service_provider_details(service_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/service-providers/")
-async def get_all_service_providers():
+async def get_all_service_providers(current_user: UserModel = Depends(get_current_user)):
     try:
         service_providers = []
         services = await service_collection.find({}).to_list(length=100)
@@ -64,7 +65,7 @@ async def get_all_service_providers():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/service-providers/{service_id}")
-async def modify_service_provider(service_id: str, service: ServiceProvider):
+async def modify_service_provider(service_id: str, service: ServiceProvider,current_user: UserModel = Depends(get_current_user)):
     try:
         if not ObjectId.is_valid(service_id):
             raise HTTPException(status_code=400, detail="Invalid service provider ID")
@@ -94,7 +95,7 @@ async def modify_service_provider(service_id: str, service: ServiceProvider):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/service-providers/{service_id}")
-async def remove_service_provider(service_id: str):
+async def remove_service_provider(service_id: str,current_user: UserModel = Depends(get_current_user)):
     try:
         if not ObjectId.is_valid(service_id):
             raise HTTPException(status_code=400, detail="Invalid service provider ID")
@@ -114,7 +115,7 @@ async def service_provider_images(
     profile_image: UploadFile = File(None),
     adhar_card: UploadFile = File(None),
     pan_card: UploadFile = File(None),
-    office_images: List[UploadFile] = File(None)
+    office_images: List[UploadFile] = File(None),current_user: UserModel = Depends(get_current_user)
 ):
     try:
         profile_image_id = await save_image(profile_image) if profile_image else None
@@ -138,7 +139,7 @@ async def service_provider_images(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/service-providers/image/{image_id}")
-async def get_image(image_id: str):
+async def get_image(image_id: str,current_user: UserModel = Depends(get_current_user)):
     try:
         grid_out = await fs.open_download_stream(ObjectId(image_id))
         if not grid_out:
@@ -152,7 +153,7 @@ async def get_image(image_id: str):
         
 
 @router.get("/service-providers/{service_id}/images/")
-async def list_images(service_id: str):
+async def list_images(service_id: str,current_user: UserModel = Depends(get_current_user)):
     try:
         image_ids = await get_image_ids(service_id)
         if not image_ids:
@@ -169,7 +170,7 @@ async def list_images(service_id: str):
 
 
 @router.delete("/service-providers/{service_id}/image/{image_key}")
-async def delete_image(service_id: str, image_key: str):
+async def delete_image(service_id: str, image_key: str,current_user: UserModel = Depends(get_current_user)):
     """
     Delete an image (profile_image, adhar_card, pan_card, or office_image) from a service provider's record
     and remove it from GridFS.
@@ -212,7 +213,7 @@ async def delete_image(service_id: str, image_key: str):
 
 
 @router.delete("/service-providers/{service_id}/office-image/{image_id}")
-async def delete_office_image(service_id: str, image_id: str):
+async def delete_office_image(service_id: str, image_id: str,current_user: UserModel = Depends(get_current_user)):
     try:
         if not ObjectId.is_valid(service_id) or not ObjectId.is_valid(image_id):
             raise HTTPException(status_code=400, detail="Invalid service or image ID")

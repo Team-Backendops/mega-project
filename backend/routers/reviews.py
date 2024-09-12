@@ -4,11 +4,13 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 from models.reviews import ReviewModel
 from core.database import user_reviews
+from models.user import UserModel
+
 
 router = APIRouter()
 
 @router.post("/service-providers/{provider_id}/reviews/")
-async def add_review(provider_id: str, review: ReviewModel):
+async def add_review(provider_id: str, review: ReviewModel,current_user: UserModel = Depends(get_current_user)):
     try:
         review_data = review.dict()
         review_data["provider_id"] = provider_id
@@ -22,7 +24,7 @@ async def add_review(provider_id: str, review: ReviewModel):
         raise HTTPException(status_code=500, detail=f"Failed to add review: {str(e)}")
 
 @router.get("/service-providers/{provider_id}/reviews/", response_model=List[ReviewModel])
-async def get_reviews(provider_id: str):
+async def get_reviews(provider_id: str,current_user: UserModel = Depends(get_current_user)):
     try:
         reviews = await user_reviews.find({"provider_id": provider_id}).to_list(length=10)
         if reviews:
@@ -34,7 +36,7 @@ async def get_reviews(provider_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to get_reviews: {str(e)}")
 
 @router.get("/service-providers/{provider_id}/average-rating/")
-async def get_average_rating(provider_id: str):
+async def get_average_rating(provider_id: str,current_user: UserModel = Depends(get_current_user)):
     pipeline = [
         {"$match": {"provider_id": provider_id}},
         {"$group": {"_id": "$provider_id", "average_rating": {"$avg": "$rating"}}}
@@ -46,7 +48,7 @@ async def get_average_rating(provider_id: str):
         raise HTTPException(status_code=404, detail="No reviews found for this service provider")
 
 @router.delete("/service-providers/{review_id}/reviews/")
-async def add_review(review_id: str):
+async def add_review(review_id: str,current_user: UserModel = Depends(get_current_user)):
     try:
         if not ObjectId.is_valid(review_id):
             raise HTTPException(status_code=400, detail="Invalid review ID")

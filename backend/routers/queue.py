@@ -7,7 +7,7 @@ router = APIRouter()
 queue_manager = QueueManager(avg_consultation_time=10)
 
 @router.post("/doctors/{doctor_id}/availability/")
-async def set_doctor_availability(doctor_id: str, availability: DoctorAvailability):
+async def set_doctor_availability(doctor_id: str, availability: DoctorAvailability,current_user: UserModel = Depends(get_current_user):
     try:
         availability_dict = {
             "doctor_id": doctor_id,
@@ -28,7 +28,7 @@ from fastapi import APIRouter, HTTPException
 from core.database import availability_collection
 
 @router.get("/doctors/{doctor_id}/availability/")
-async def get_doctor_availability(doctor_id: str):
+async def get_doctor_availability(doctor_id: str,current_user: UserModel = Depends(get_current_user):
     try:
         doctor_availability = await availability_collection.find_one({"doctor_id": doctor_id})
         
@@ -48,7 +48,7 @@ async def get_doctor_availability(doctor_id: str):
 
 # Patient joins the queue
 @router.post("/doctors/{doctor_id}/queue/join/")
-async def join_queue(doctor_id: str, patient: JoinQueue):
+async def join_queue(doctor_id: str, patient: JoinQueue,current_user: UserModel = Depends(get_current_user):
     try:
         slot = await queue_manager.add_to_queue(patient.patient_id, patient.patient_name)
         return {"message": f"Patient {patient.patient_name} added to queue", "slot": slot}
@@ -59,7 +59,7 @@ async def join_queue(doctor_id: str, patient: JoinQueue):
 
 # Get current queue status
 @router.get("/doctors/{doctor_id}/queue/")
-async def get_queue_status(doctor_id: str):
+async def get_queue_status(doctor_id: str,current_user: UserModel = Depends(get_current_user):
     try:
         queue_status = await queue_manager.get_queue_status()
         return {"queue": queue_status}
@@ -70,7 +70,7 @@ async def get_queue_status(doctor_id: str):
 
 # Doctor moves to the next patient
 @router.post("/doctors/{doctor_id}/queue/next/")
-async def move_to_next_patient(doctor_id: str):
+async def move_to_next_patient(doctor_id: str,current_user: UserModel = Depends(get_current_user):
     try:
         await queue_manager.next_patient()
         queue_status = await queue_manager.get_queue_status()
