@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from typing import List
 from bson import ObjectId
 from gridfs import GridFSBucket
+from core.config import settings
 from core.database import fs
 from io import BytesIO
 from models.service import ServiceProvider
@@ -239,5 +240,28 @@ async def delete_office_image(service_id: str, image_id: str,current_user: UserM
             raise HTTPException(status_code=404, detail="Failed to update service provider")
 
         return {"message": "Office image deleted successfully", "image_id": image_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/service-providers/{service_id}/map")
+async def get_service_provider_map(service_id: str, current_user: UserModel = Depends(get_current_user)):
+    try:
+        service_provider = await get_service_provider(service_id)
+        if not service_provider:
+            raise HTTPException(status_code=404, detail="Service provider not found")
+
+        location = service_provider["location"]
+        mapbox_token = "settings.map_token "
+        map_url = f"https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/{location['longitude']},{location['latitude']},12,0,0/400x200?access_token={mapbox_token}"
+
+        # Create a new Location object from the service provider's location data
+        location_obj = Location(
+            address=location["address"],
+            city=location["city"],
+            state=location["state"],
+            zip_code=location["zip_code"]
+        )
+
+        return {"map_url": map_url, "location": location_obj.dict()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
