@@ -255,7 +255,7 @@ async def get_service_provider_map(service_id: str,current_user: UserModel = Dep
             raise HTTPException(status_code=400, detail="Location data is missing")
 
         # Geocoding
-        mapbox_token = "pk.eyJ1IjoicHJhdGhrdW1iaGFyIiwiYSI6ImNtMHpldDB1YzA0dHEyaXF0eXQwZWZlZ2gifQ.VczNUn3co1MuTQJAr9K0uw"
+        mapbox_token = settings.map_token
         geocode_url = (
             f"https://api.mapbox.com/geocoding/v5/mapbox.places/"
             f"{location['address']}, {location['city']}, {location['state']} {location['zip_code']}.json"
