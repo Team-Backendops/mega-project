@@ -244,24 +244,37 @@ async def delete_office_image(service_id: str, image_id: str,current_user: UserM
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/service-providers/{service_id}/map")
-async def get_service_provider_map(service_id: str, current_user: UserModel = Depends(get_current_user)):
+async def get_service_provider_map(service_id: str):
     try:
         service_provider = await get_service_provider(service_id)
         if not service_provider:
             raise HTTPException(status_code=404, detail="Service provider not found")
 
-        location = service_provider["location"]
-        mapbox_token = "settings.map_token "
-        map_url = f"https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/{location['longitude']},{location['latitude']},12,0,0/400x200?access_token={mapbox_token}"
+        location = service_provider.get("location")
+        if not location:
+            raise HTTPException(status_code=400, detail="Location data is missing")
 
-        # Create a new Location object from the service provider's location data
-        location_obj = Location(
-            address=location["address"],
-            city=location["city"],
-            state=location["state"],
-            zip_code=location["zip_code"]
+        # Geocoding
+        mapbox_token = "pk.eyJ1IjoicHJhdGhrdW1iaGFyIiwiYSI6ImNtMHpldDB1YzA0dHEyaXF0eXQwZWZlZ2gifQ.VczNUn3co1MuTQJAr9K0uw"
+        geocode_url = (
+            f"https://api.mapbox.com/geocoding/v5/mapbox.places/"
+            f"{location['address']}, {location['city']}, {location['state']} {location['zip_code']}.json"
+            f"?access_token={mapbox_token}"
         )
 
-        return {"map_url": map_url, "location": location_obj.dict()}
+        response = requests.get(geocode_url)
+        geocode_data = response.json()
+
+        if not geocode_data['features']:
+            raise HTTPException(status_code=404, detail="Unable to geocode address")
+
+        longitude, latitude = geocode_data['features'][0]['center']
+
+        map_url = f"https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/{longitude},{latitude},12,0,0/400x200?access_token={mapbox_token}"
+
+        return {
+            "map_url": map_url,
+            "name": service_provider.get("name")
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
