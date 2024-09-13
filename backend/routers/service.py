@@ -244,7 +244,7 @@ async def delete_office_image(service_id: str, image_id: str,current_user: UserM
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/service-providers/{service_id}/map")
-async def get_service_provider_map(service_id: str):
+async def get_service_provider_map(service_id: str,current_user: UserModel = Depends(get_current_user)):
     try:
         service_provider = await get_service_provider(service_id)
         if not service_provider:
