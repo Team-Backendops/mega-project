@@ -1,11 +1,21 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from routers import service, user, reviews, queue
+from routers import service, user, reviews, slot, service_login
 import os
 import secrets
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # React frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 SECRET_KEY = secrets.token_hex(16)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
@@ -13,7 +23,8 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.include_router(user.router)
 app.include_router(service.router)
 app.include_router(reviews.router)
-app.include_router(queue.router)
+app.include_router(slot.router)
+app.include_router(service_login.router)
 
 frontend_directory = os.path.join(os.path.dirname(__file__), "..", "frontend")
 
