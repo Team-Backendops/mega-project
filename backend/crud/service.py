@@ -56,8 +56,48 @@ async def get_image_ids(service_id: str):
         return {
             "profile_image_id": document.get("profile_image_id"),
             "adhaar_card_image_id": document.get("adhaar_card_image_id"),
-            "pan_card_image_id": document.get("pan_card_image_id"),
             "office_images_ids": document.get("office_images_ids", [])
         }
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def get_service_provider_latlng(service_id: str):
+    try:
+        service_provider = await get_service_provider(service_id)
+        if not service_provider:
+            raise HTTPException(status_code=404, detail="Service provider not found")
+
+        location = service_provider.get("location")
+        if not location:
+            raise HTTPException(status_code=400, detail="Location data is missing")
+
+        # Google Maps API Key
+        google_maps_api_key = settings.google_maps_api_key
+
+        # Geocoding request to Google Maps API
+        geocode_url = (
+            f"https://maps.googleapis.com/maps/api/geocode/json"
+            f"?address={location['address']}, {location['city']}, {location['state']} {location['zip_code']}"
+            f"&key={google_maps_api_key}"
+        )
+
+        response = requests.get(geocode_url)
+        geocode_data = response.json()
+
+        # Debugging: Print geocode response
+        logging.info(f"Geocode data: {geocode_data}")
+
+        if not geocode_data['results']:
+            raise HTTPException(status_code=404, detail="Unable to geocode address")
+
+        # Extracting latitude and longitude from the geocode data
+        location_data = geocode_data['results'][0]['geometry']['location']
+        latitude = location_data['lat']
+        longitude = location_data['lng']
+
+        return latitude, longitude
+
+    except Exception as e:
+        logging.error(f"Error in get_service_provider_latlng: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
